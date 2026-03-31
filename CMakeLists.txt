@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Version from git tag  (e.g. tag "v1.2.3" → version 1.2.3)
+# ──────────────────────────────────────────────────────────────────────────────
+include(cmake/GitVersion.cmake)
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Project declaration
 # ──────────────────────────────────────────────────────────────────────────────
 project(
     Calculator
-    VERSION      1.0.0
+    VERSION      ${CALCULATOR_VERSION}
     DESCRIPTION  "Header-only C++11 arithmetic calculator library"
     HOMEPAGE_URL "https://github.com/example/calculator"
     LANGUAGES    CXX
@@ -39,6 +44,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(CALCULATOR_BUILD_TESTS  "Build unit tests"       ON)
     option(CALCULATOR_BUILD_DOCS   "Build Doxygen docs"     ON)
     option(CALCULATOR_INSTALL      "Generate install rules" ON)
+    option(CALCULATOR_PACKAGE      "Enable CPack packaging" ON)
 
     # Nice IDE folder layout
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -127,4 +133,20 @@ if(CALCULATOR_INSTALL)
             ${CMAKE_CURRENT_BINARY_DIR}/CalculatorConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Calculator
     )
+endif()
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CPack  (ZIP archive of the installed tree)
+# ──────────────────────────────────────────────────────────────────────────────
+if(CALCULATOR_PACKAGE AND CALCULATOR_INSTALL AND CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(CPACK_GENERATOR               "ZIP")
+    set(CPACK_PACKAGE_NAME            "${PROJECT_NAME}")
+    set(CPACK_PACKAGE_VERSION         "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_DESCRIPTION}")
+    set(CPACK_PACKAGE_FILE_NAME
+        "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)   # no extra top-level folder inside the ZIP
+    set(CPACK_VERBATIM_VARIABLES      ON)
+
+    include(CPack)
 endif()
