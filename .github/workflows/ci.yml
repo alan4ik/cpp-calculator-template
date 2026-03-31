@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # Build, test, coverage, docs
+  # ────────────────────────────────────────────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # needed for git tags → version
+
+      - name: Install dependencies
+        run: sudo apt-get install -y lcov doxygen graphviz
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCALCULATOR_COVERAGE=ON \
+            -DCALCULATOR_BUILD_DOCS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test + Coverage
+        run: cmake --build build --target coverage
+
+      - name: Docs
+        run: cmake --build build --target docs
+
+      # Собираем итоговую папку для GitHub Pages:
+      #   public/           → Doxygen docs
+      #   public/coverage/  → lcov HTML
+      - name: Prepare Pages
+        run: |
+          mkdir -p public/coverage
+          cp -r build/docs/html/. public/
+          cp -r build/coverage_html/. public/coverage/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Deploy to GitHub Pages — только при пуше в main
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
