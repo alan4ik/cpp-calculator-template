@@ -45,6 +45,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(CALCULATOR_BUILD_DOCS   "Build Doxygen docs"     ON)
     option(CALCULATOR_INSTALL      "Generate install rules" ON)
     option(CALCULATOR_PACKAGE      "Enable CPack packaging" ON)
+    option(CALCULATOR_COVERAGE     "Enable gcov/lcov coverage report (GCC/Clang only)" OFF)
 
     # Nice IDE folder layout
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -80,6 +81,15 @@ target_compile_options(calculator
 if(CALCULATOR_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+
+    if(CALCULATOR_COVERAGE)
+        include(cmake/Coverage.cmake)
+        calculator_add_coverage(
+            TEST_TARGET  calculator_tests
+            INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            OUTPUT_DIR   "${CMAKE_BINARY_DIR}/coverage_html"
+        )
+    endif()
 endif()
 
 if(CALCULATOR_BUILD_DOCS)

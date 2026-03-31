@@ -1,22 +1,27 @@
 # tests/CMakeLists.txt
 # ──────────────────────────────────────────────────────────────────────────────
-# Fetch GoogleTest (no system install required)
+# GoogleTest — prefer system installation, fall back to FetchContent
 # ──────────────────────────────────────────────────────────────────────────────
-include(FetchContent)
+find_package(GTest QUIET)
 
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        v1.15.2
-    GIT_SHALLOW    TRUE        # only fetch the tip commit
-)
+if(NOT GTest_FOUND)
+    message(STATUS "[Tests] System GTest not found — fetching via FetchContent")
+    include(FetchContent)
 
-# Prevent GoogleTest from overriding our compiler/linker settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-# Do not install GoogleTest alongside our library
-set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        v1.15.2
+        GIT_SHALLOW    TRUE
+    )
 
-FetchContent_MakeAvailable(googletest)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    set(INSTALL_GTEST           OFF CACHE BOOL "" FORCE)
+
+    FetchContent_MakeAvailable(googletest)
+else()
+    message(STATUS "[Tests] Using system GTest: ${GTest_VERSION}")
+endif()
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Test executable
